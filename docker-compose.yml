@@ -3,6 +3,8 @@
       image: postgres:16
     basketdb:
       image: postgres:16
+    distributedcache:
+      image: redis:8.8
 
     catalog-api:
       image: ${DOCKER_REGISTRY-}catalogapi
@@ -10,6 +12,13 @@
         context: .
         dockerfile: Catalog-API/Dockerfile
 
+    basket-api:
+      image: ${DOCKER_REGISTRY-}basketapi
+      build:
+        context: .
+        dockerfile: Basket/Basket-API/Dockerfile
+
   volumes:
     postgres_catalog:
     postgres_basket:
+
