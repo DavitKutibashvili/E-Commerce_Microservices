@@ -1,4 +1,6 @@
 ﻿
+using Discount_gRPC.Protos;
+
 namespace Basket_API.Basket.StoreBasket
 {
     public record StoreBasketCommand(ShoppingCart shoppingCart) : ICommand<StoreBasketResult>;
@@ -11,12 +13,21 @@ namespace Basket_API.Basket.StoreBasket
             RuleFor(x => x.shoppingCart.UserName).NotEmpty().WithMessage("UserName cannot be empty.");
         }
     }
-    internal class StoreBasketCommandHandler(IBasketRepository basketRepository) : ICommandHandler<StoreBasketCommand, StoreBasketResult>
+    internal class StoreBasketCommandHandler(IBasketRepository basketRepository, DiscountService.DiscountServiceClient discountProto) : ICommandHandler<StoreBasketCommand, StoreBasketResult>
     {
         public async Task<StoreBasketResult> Handle(StoreBasketCommand command, CancellationToken cancellationToken)
         {
+            await DeductDiscount(command.shoppingCart, cancellationToken);
             await basketRepository.StoreBasket(command.shoppingCart, cancellationToken);
             return new StoreBasketResult(command.shoppingCart.UserName);
+        }
+        private async Task DeductDiscount(ShoppingCart shoppingCart, CancellationToken cancellationToken)
+        {
+            foreach (var item in shoppingCart.Items)
+            {
+                var discount = await discountProto.GetDiscountAsync(new GetDiscountRequest { ProductName = item.ProductName });
+                item.Price -= discount.Amount;
+            }
         }
     }
 }

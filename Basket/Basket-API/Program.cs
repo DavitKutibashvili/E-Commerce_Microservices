@@ -1,5 +1,6 @@
 
 
+using Discount_gRPC.Protos;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -26,6 +27,18 @@ builder.Services.AddStackExchangeRedisCache(options =>
 });
 builder.Services.AddHealthChecks().AddNpgSql(builder.Configuration.GetConnectionString("DataBase")!)
     .AddRedis(builder.Configuration.GetConnectionString("Redis")!);
+builder.Services.AddGrpcClient<DiscountService.DiscountServiceClient>(opt =>
+{
+    opt.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]!);
+}).ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler
+    {
+        ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+    };
+
+    return handler;
+});
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
